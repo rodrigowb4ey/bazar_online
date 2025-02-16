@@ -3,11 +3,11 @@ from fastapi import FastAPI
 app = FastAPI()
 
 
-@app.get('/')
-def read_root():
-    return {'Hello': 'World'}
+@app.get('/healthcheck')
+def healthcheck() -> dict[str, str]:
+    """Healthcheck endpoint.
 
-
-@app.get('/items/{item_id}')
-def read_item(item_id: int, q: str | None = None):
-    return {'item_id': item_id, 'q': q}
+    Returns:
+        A dictionary containing the application's health status.
+    """
+    return {'status': 'ok'}
