@@ -8,13 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 async def test_create_user(session: AsyncSession) -> None:
     """Test for creating a User on the database."""
     repo = UserRepository(session)
-    user_in = UserCreate(username='testuser', email='test@example.com', password='secret')
+    user_in = UserCreate(username='testuser2', email='test23@example.com', password='secret')
     new_user = await repo.create(user_in)
     await session.commit()
 
     assert new_user.id is not None
-    assert new_user.username == 'testuser'
-    assert new_user.email == 'test@example.com'
+    assert new_user.username == 'testuser2'
+    assert new_user.email == 'test23@example.com'
     assert new_user.hashed_password != 'secret'
 
 
