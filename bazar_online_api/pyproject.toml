@@ -57,6 +57,7 @@ files = ["app/**/*.py", "tests/**/*.py"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --cov-report=term-missing --no-cov-on-fail --cov=app"
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "session"
 filterwarnings = [
   "ignore::DeprecationWarning:passlib.*:",
   "ignore::DeprecationWarning:bcrypt.*:",

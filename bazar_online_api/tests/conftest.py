@@ -35,8 +35,11 @@ async def engine() -> AsyncGenerator[AsyncEngine, None]:
 async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     """SQLAlchemy DB Session for testing purposes."""
     async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
-    async with async_session() as session:
-        yield session
+    async with engine.connect() as connection:
+        transaction = await connection.begin()
+        async with async_session(bind=connection) as session:
+            yield session
+        await transaction.rollback()
 
 
 @pytest.fixture(autouse=True)
