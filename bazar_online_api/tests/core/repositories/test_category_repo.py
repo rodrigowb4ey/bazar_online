@@ -32,17 +32,17 @@ async def test_get_by_id(session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_list_categories(session: AsyncSession) -> None:
-    """Test listing Categories."""
+async def test_list_categories_by_owner_id(session: AsyncSession) -> None:
+    """Test listing Categories by Owner ID."""
     repo = CategoryRepository(session)
-    initial_categories = await repo.list()
+    initial_categories = await repo.list_by_owner_id(owner_id=3)
     initial_count = len(initial_categories)
 
     category_in = CategoryCreate(name='Toys', owner_id=3)
     await repo.create(category_in)
     await session.commit()
 
-    new_categories = await repo.list()
+    new_categories = await repo.list_by_owner_id(owner_id=3)
     assert len(new_categories) == initial_count + 1
 
 

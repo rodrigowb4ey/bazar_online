@@ -41,17 +41,19 @@ class CategoryRepository:
         result = await self.session.execute(select(Category).filter(Category.id == category_id))
         return result.scalar_one_or_none()
 
-    async def list(self, skip: int = 0, limit: int = 100) -> list[Category]:
-        """List Categories with pagination.
+    async def list_by_owner_id(self, owner_id: int, skip: int = 0, limit: int = 100) -> list[Category]:
+        """List Categories with pagination, filtered by owner.
 
         Args:
+            owner_id: The ID of the owner whose categories to list.
             skip: Number of records to skip.
             limit: Maximum number of records to return.
 
         Returns:
-            A list of Category instances.
+            A list of Category instances that belong to the given owner.
         """
-        result = await self.session.execute(select(Category).offset(skip).limit(limit))
+        stmt = select(Category).where(Category.owner_id == owner_id).offset(skip).limit(limit)
+        result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
     async def update(self, category: Category, category_in: CategoryUpdate) -> Category:
