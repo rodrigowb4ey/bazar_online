@@ -30,9 +30,9 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
         A JWT encoded access token.
     """
     to_encode = data.copy()
-    expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
+    expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({'exp': expire})
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ACCESS_TOKEN_ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict[str, Any] | None:
@@ -45,7 +45,7 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
         The decoded payload if valid; otherwise, None.
     """
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ACCESS_TOKEN_ALGORITHM])
         return payload if isinstance(payload, dict) else None
     except jwt.PyJWTError:
         return None

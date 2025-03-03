@@ -1,14 +1,19 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-DATABASE_URL = 'sqlite+aiosqlite:///./sqlite.db'
+from app.core.settings import settings
 
-engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(
+    url=settings.asyncpg_url.unicode_string(),
+    future=True,
+    echo=True,
+)
 
-async_session_maker = async_sessionmaker(
+AsyncSessionFactory = async_sessionmaker(
     bind=engine,
+    autoflush=False,
     expire_on_commit=False,
 )
 
@@ -16,5 +21,5 @@ async_session_maker = async_sessionmaker(
 @asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Yields an async SQLAlchemy session."""
-    async with async_session_maker() as session:
+    async with AsyncSessionFactory() as session:
         yield session
