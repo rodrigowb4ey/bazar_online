@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import (
-    Column,
     DateTime,
     Float,
     ForeignKey,
@@ -9,7 +8,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -21,16 +20,20 @@ class User(Base):
 
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
-    catalogs = relationship('Catalog', back_populates='owner', cascade='all, delete-orphan')
-    products = relationship('Product', back_populates='owner', cascade='all, delete-orphan')
-    categories = relationship('Category', back_populates='owner', cascade='all, delete-orphan')
+    catalogs: Mapped[list['Catalog']] = relationship('Catalog', back_populates='owner', cascade='all, delete-orphan')
+    products: Mapped[list['Product']] = relationship('Product', back_populates='owner', cascade='all, delete-orphan')
+    categories: Mapped[list['Category']] = relationship(
+        'Category', back_populates='owner', cascade='all, delete-orphan'
+    )
 
 
 class Catalog(Base):
@@ -38,15 +41,17 @@ class Catalog(Base):
 
     __tablename__ = 'catalogs'
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    description = Column(Text)
-    owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
-    owner = relationship('User', back_populates='catalogs')
-    products = relationship('Product', back_populates='catalog', cascade='all, delete-orphan')
+    owner: Mapped['User'] = relationship('User', back_populates='catalogs')
+    products: Mapped[list['Product']] = relationship('Product', back_populates='catalog', cascade='all, delete-orphan')
 
 
 class Category(Base):
@@ -54,14 +59,18 @@ class Category(Base):
 
     __tablename__ = 'categories'
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), nullable=False)
-    owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(50), nullable=False)
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
-    owner = relationship('User', back_populates='categories')
-    products = relationship('Product', back_populates='category', cascade='all, delete-orphan')
+    owner: Mapped['User'] = relationship('User', back_populates='categories')
+    products: Mapped[list['Product']] = relationship(
+        'Product', back_populates='category', cascade='all, delete-orphan'
+    )
 
 
 class Product(Base):
@@ -69,16 +78,18 @@ class Product(Base):
 
     __tablename__ = 'products'
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    description = Column(Text)
-    price = Column(Float, nullable=False)
-    catalog_id = Column(Integer, ForeignKey('catalogs.id'), nullable=False)
-    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
-    owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    catalog_id: Mapped[int] = mapped_column(Integer, ForeignKey('catalogs.id'), nullable=False)
+    category_id: Mapped[int] = mapped_column(Integer, ForeignKey('categories.id'), nullable=False)
+    owner_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
 
-    catalog = relationship('Catalog', back_populates='products')
-    category = relationship('Category', back_populates='products')
-    owner = relationship('User', back_populates='products')
+    catalog: Mapped['Catalog'] = relationship('Catalog', back_populates='products')
+    category: Mapped['Category'] = relationship('Category', back_populates='products')
+    owner: Mapped['User'] = relationship('User', back_populates='products')
