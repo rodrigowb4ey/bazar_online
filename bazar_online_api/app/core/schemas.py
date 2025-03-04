@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field, TypeAdapter, field_validator
@@ -53,26 +54,30 @@ class CategoryPublic(BaseModel):
 CategoryPublicList = TypeAdapter(list[CategoryPublic])
 
 
-class ProductCreate(BaseModel):
-    """Schema for creating a Product."""
+class ProductSchema(BaseModel):
+    """Schema for product instances."""
 
+    name: str = Field(min_length=1)
+    description: str | None = None
+    price: Decimal
+    catalog_id: int
+    category_id: int
+
+
+class ProductPublic(BaseModel):
+    """Public schema for product instances."""
+
+    model_config = {'from_attributes': True}
+    id: int
     name: str
     description: str | None = None
-    price: float
+    price: Decimal
     catalog_id: int
     category_id: int
     owner_id: int
 
 
-class ProductUpdate(BaseModel):
-    """Schema for updating a Product."""
-
-    name: str | None = None
-    description: str | None = None
-    price: float | None = None
-    catalog_id: int | None = None
-    category_id: int | None = None
-    owner_id: int | None = None
+ProductPublicList = TypeAdapter(list[ProductPublic])
 
 
 class CatalogSchema(BaseModel):
