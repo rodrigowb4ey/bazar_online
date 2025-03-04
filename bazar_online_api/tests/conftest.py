@@ -1,52 +1,69 @@
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator
 
-import pytest
 import pytest_asyncio
+import sqlalchemy as sa
 from app.core.models import Base
 from app.infra.database import get_session
 from app.main import app
+from httpx import ASGITransport, AsyncClient
+from pydantic_core import MultiHostUrl
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import StaticPool
-
-TEST_DATABASE_URL: str = 'sqlite+aiosqlite:///:memory:'
+from testcontainers.postgres import PostgresContainer  # type: ignore[import-untyped]
 
 
 @pytest_asyncio.fixture(scope='session')
 async def engine() -> AsyncGenerator[AsyncEngine, None]:
     """SQLAlchemy DB Engine for testing purposes."""
-    engine: AsyncEngine = create_async_engine(
-        TEST_DATABASE_URL,
-        echo=False,
-        poolclass=StaticPool,
-        connect_args={'check_same_thread': False},
-    )
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    await engine.dispose()
+    with PostgresContainer('postgres:16') as postgres:
+        url = MultiHostUrl.build(
+            scheme='postgresql+psycopg',
+            username=postgres.username,
+            password=postgres.password,
+            host=postgres.get_container_host_ip(),
+            port=int(postgres.get_exposed_port(5432)),
+            path=postgres.dbname,
+        )
+        engine = create_async_engine(url=url.unicode_string(), echo=True, future=True)
+
+        async with engine.connect() as conn:
+            await conn.execute(sa.text('CREATE SCHEMA IF NOT EXISTS meu_brecho'))
+            await conn.commit()
+
+        yield engine
+
+        await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     """SQLAlchemy DB Session for testing purposes."""
-    async_session = async_sessionmaker(bind=engine, expire_on_commit=False)
-    async with engine.connect() as connection:
-        transaction = await connection.begin()
-        async with async_session(bind=connection) as session:
-            yield session
-        await transaction.rollback()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async_session = async_sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    async with async_session() as session:
+        yield session
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
-@pytest.fixture(autouse=True)
-def override_get_session(session: AsyncSession) -> Generator[None, None, None]:
-    """Automatically override the get_session dependency for the FastAPI app.
-    with the test session provided by the 'session' fixture.
-    """  # noqa: D205
-    app.dependency_overrides[get_session] = lambda: session
-    yield
-    app.dependency_overrides.pop(get_session, None)
+@pytest_asyncio.fixture
+async def async_client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Async Test Client using httpx."""
+
+    async def get_session_overrides() -> AsyncGenerator[AsyncSession, None]:
+        yield session
+
+    app.dependency_overrides[get_session] = get_session_overrides
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url='http://test') as client:
+        yield client
+
+    app.dependency_overrides.clear()
