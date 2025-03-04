@@ -2,7 +2,8 @@ from collections.abc import AsyncGenerator
 
 import pytest_asyncio
 import sqlalchemy as sa
-from app.core.models import Base
+from app.core.models import Base, User
+from app.core.security import create_access_token
 from app.infra.database import get_session
 from app.main import app
 from httpx import ASGITransport, AsyncClient
@@ -67,3 +68,24 @@ async def async_client(session: AsyncSession) -> AsyncGenerator[AsyncClient, Non
         yield client
 
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def user(session: AsyncSession) -> User:
+    """Create a dummy user in the database and return it."""
+    password = 'your-very-secure-pw'
+    new_user = User(
+        username='username_1234',
+        email='username@example.com',
+        hashed_password=password,
+    )
+    session.add(new_user)
+    await session.commit()
+    await session.refresh(new_user)
+    return new_user
+
+
+@pytest_asyncio.fixture
+async def token(user: User) -> str:
+    """Generate an access token for the dummy user."""
+    return create_access_token(email=user.email)
