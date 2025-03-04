@@ -75,19 +75,23 @@ class ProductUpdate(BaseModel):
     owner_id: int | None = None
 
 
-class CatalogCreate(BaseModel):
-    """Schema for creating a Catalog."""
+class CatalogSchema(BaseModel):
+    """Schema for catalog instances."""
 
+    name: str = Field(min_length=1)
+    description: str | None = None
+
+
+class CatalogPublic(BaseModel):
+    """Public schema for catalog instances."""
+
+    model_config = {'from_attributes': True}
+    id: int
     name: str
-    description: str | None = None
-    owner_id: int
+    description: str | None
 
 
-class CatalogUpdate(BaseModel):
-    """Schema for updating a Catalog."""
-
-    name: str | None = None
-    description: str | None = None
+CatalogPublicList = TypeAdapter(list[CatalogPublic])
 
 
 class Token(BaseModel):
