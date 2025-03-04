@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, TypeAdapter, field_validator
 
 from app.core.security import get_password_hash
 
@@ -35,17 +35,22 @@ class UserUpdate(BaseModel):
     password: str | None = None
 
 
-class CategoryCreate(BaseModel):
-    """Schema for creating Category instances."""
+class CategorySchema(BaseModel):
+    """Schema for category instances."""
 
+    name: str = Field(min_length=1)
+
+
+class CategoryPublic(BaseModel):
+    """Public schema for category instances."""
+
+    model_config = {'from_attributes': True}
+
+    id: int
     name: str
-    owner_id: int
 
 
-class CategoryUpdate(BaseModel):
-    """Schema for updating Category instances."""
-
-    name: str | None = None
+CategoryPublicList = TypeAdapter(list[CategoryPublic])
 
 
 class ProductCreate(BaseModel):
