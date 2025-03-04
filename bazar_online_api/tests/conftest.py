@@ -1,8 +1,9 @@
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 
 import pytest_asyncio
 import sqlalchemy as sa
-from app.core.models import Base, User
+from app.core.models import Base, Catalog, Category, User
 from app.core.security import create_access_token
 from app.infra.database import get_session
 from app.main import app
@@ -89,3 +90,31 @@ async def user(session: AsyncSession) -> User:
 async def token(user: User) -> str:
     """Generate an access token for the dummy user."""
     return create_access_token(email=user.email)
+
+
+@pytest_asyncio.fixture
+async def catalog(session: AsyncSession, user: User) -> Catalog:
+    """Create a dummy catalog for testing."""
+    new_catalog = Catalog(
+        name='Test Catalog',
+        description='Test Catalog Description',
+        owner_id=user.id,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    session.add(new_catalog)
+    await session.commit()
+    await session.refresh(new_catalog)
+    return new_catalog
+
+
+@pytest_asyncio.fixture
+async def category(session: AsyncSession, user: User) -> Category:
+    """Create a dummy category for testing."""
+    new_category = Category(
+        name='TestCategory', owner_id=user.id, created_at=datetime.now(UTC), updated_at=datetime.now(UTC)
+    )
+    session.add(new_category)
+    await session.commit()
+    await session.refresh(new_category)
+    return new_category
